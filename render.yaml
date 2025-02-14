@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: city-suggestions
+    env: docker
+    buildCommand: docker build -t city-suggestions .
+    startCommand: ./main
+    envVars:
+      - key: PORT
+        value: 8080
