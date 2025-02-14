@@ -1,6 +1,6 @@
 module lck-auto-suggest
 
-go 1.23.1
+go 1.21
 
 require (
 	github.com/gorilla/mux v1.8.1 // indirect
