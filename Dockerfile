@@ -2,12 +2,15 @@ FROM golang:1.21-alpine
 
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum ./
-RUN go mod download
+# Copy go mod file first
+COPY go.mod ./
+
+# Copy go sum if it exists
+COPY go.sum* ./
 
 # Copy source code
 COPY . .
+
 
 # Create data directory and copy TSV
 RUN mkdir -p /app/data
