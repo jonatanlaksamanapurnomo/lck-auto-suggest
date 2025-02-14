@@ -44,7 +44,7 @@ func loadCitiesFromCSV(repo repository.CityRepository) error {
 
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
-	reader.LazyQuotes = true
+	reader.FieldsPerRecord = -1 // Allow variable number of fields
 
 	// Skip header
 	_, err = reader.Read()
@@ -53,34 +53,45 @@ func loadCitiesFromCSV(repo repository.CityRepository) error {
 	}
 
 	var cities []entity.City
+	lineNum := 1 // Start after header
+
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
+		lineNum++
+
+		// Skip malformed records but log them
 		if err != nil {
-			log.Printf("Error reading record: %v", err)
+			log.Printf("Warning: Skipping line %d due to error: %v", lineNum, err)
 			continue
 		}
 
-		// Handle potential parsing errors gracefully
+		// Ensure we have minimum required fields
+		if len(record) < 18 {
+			log.Printf("Warning: Skipping line %d due to insufficient fields (got %d fields)", lineNum, len(record))
+			continue
+		}
+
+		// Safely parse fields with error handling
 		lat, err := strconv.ParseFloat(record[4], 64)
 		if err != nil {
-			log.Printf("Error parsing latitude for city %s: %v", record[1], err)
+			log.Printf("Warning: Invalid latitude on line %d: %v", lineNum, err)
 			continue
 		}
 
 		lon, err := strconv.ParseFloat(record[5], 64)
 		if err != nil {
-			log.Printf("Error parsing longitude for city %s: %v", record[1], err)
+			log.Printf("Warning: Invalid longitude on line %d: %v", lineNum, err)
 			continue
 		}
 
+		// Parse population with default value if invalid
 		pop, err := strconv.ParseInt(record[14], 10, 64)
 		if err != nil {
-			// If population is invalid, set it to 0 but don't skip the record
-			log.Printf("Error parsing population for city %s: %v", record[1], err)
-			pop = 0
+			pop = 0 // Default to 0 if population is invalid
+			log.Printf("Warning: Invalid population on line %d: %v, using 0", lineNum, err)
 		}
 
 		city := entity.City{
@@ -98,6 +109,6 @@ func loadCitiesFromCSV(repo repository.CityRepository) error {
 		cities = append(cities, city)
 	}
 
-	log.Printf("Loaded %d cities successfully", len(cities))
+	log.Printf("Successfully loaded %d cities (skipped %d malformed records)", len(cities), lineNum-len(cities)-1)
 	return repo.Load(cities)
 }
