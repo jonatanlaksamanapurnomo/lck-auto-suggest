@@ -1,9 +1,0 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
-
-[deploy]
-startCommand = "./main"
-healthcheckPath = "/health"
-restartPolicyType = "on_failure"
-numReplicas = 1
